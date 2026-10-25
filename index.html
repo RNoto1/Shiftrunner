@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift Runner Guide</title>
+    <!-- Added a modern font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --indigo: #6366f1;
+            --emerald: #10b981;
+            --amber: #f59e0b;
+            --purple: #a855f7;
+            --rose: #f43f5e;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 10px 25px -5px rgba(0,0,0,0.1);
+            --radius: 24px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+        }
+
+        #confettiCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+
+        /* Main Container for Desktop Centering */
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            animation: fadeIn 0.4s ease-out;
+            width: 100%;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .screen.active { display: flex; }
+
+        /* Header Styles */
+        header {
+            padding: 40px 24px 24px;
+            color: #fff;
+            text-align: center;
+            border-radius: 0 0 32px 32px;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+        }
+
+        header.dash { background: linear-gradient(135deg, #6366f1, #a855f7); }
+        header.proc-indigo { background: linear-gradient(135deg, #6366f1, #818cf8); }
+        header.proc-emerald { background: linear-gradient(135deg, #10b981, #34d399); }
+        header.proc-amber { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        header.proc-purple { background: linear-gradient(135deg, #a855f7, #c084fc); }
+
+        header h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 4px; }
+        header p { opacity: 0.9; font-size: 0.9rem; }
+
+        .home-btn {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 10px;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1.2rem;
+            backdrop-filter: blur(5px);
+            cursor: pointer;
+        }
+
+        /* Main Content */
+        main { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 100px;}
+
+        /* Dashboard Cards */
+        .card-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 32px 24px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0,0,0,0.03);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px;
+        }
+        .card.c-indigo::before { background: var(--indigo); }
+        .card.c-emerald::before { background: var(--emerald); }
+        .card.c-amber::before { background: var(--amber); }
+        .card.c-purple::before { background: var(--purple); }
+
+        .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+        .card:active { transform: scale(0.98); }
+
+        .card-icon { font-size: 3rem; margin-bottom: 16px; display: block; }
+        .card h2 { font-size: 1.3rem; margin-bottom: 8px; }
+        .card p { color: var(--text-light); font-size: 0.9rem; }
+
+        /* Progress Bar */
+        .progress-wrap { padding: 16px 24px; background: #fff; border-bottom: 1px solid #f1f5f9; }
+        .progress-bar { height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.5s ease; }
+        
+        .step-counter { text-align: center; padding: 12px; font-size: 0.85rem; font-weight: 700; color: var(--text-light); background: #fff; border-bottom: 1px solid #f1f5f9; }
+
+        /* Step Content */
+        .step-card {
+            background: #fff;
+            margin: 16px 20px;
+            padding: 32px 24px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+        }
+        .step-num {
+            display: inline-block;
+            background: var(--indigo);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 4px 12px;
+            border-radius: 50px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .step-text { font-size: 1.2rem; font-weight: 600; color: var(--text); line-height: 1.5; }
+
+        /* Footer Buttons */
+        footer {
+            position: sticky;
+            bottom: 0;
+            padding: 20px;
+            background: #fff;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            gap: 12px;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+        }
+
+        .btn {
+            padding: 16px;
+            border: none;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-back { background: #f1f5f9; color: var(--text); }
+        .btn-next { color: #fff; flex: 1; }
+        
+        .btn-next-indigo { background: var(--indigo); }
+        .btn-next-emerald { background: var(--emerald); }
+        .btn-next-amber { background: var(--amber); }
+        .btn-next-purple { background: var(--purple); }
+
+        .btn:active { transform: scale(0.95); }
+
+        /* Success Screen */
+        #successScreen { 
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            align-items: center; 
+            justify-content: center; 
+            text-align: center;
+            padding: 40px 20px;
+        }
+        #successScreen .big-emoji { font-size: 6rem; margin-bottom: 24px; animation: bounce 1s ease infinite; }
+        #successScreen h2 { color: #fff; font-size: 2.5rem; margin-bottom: 16px; }
+        #successScreen p { color: rgba(255,255,255,0.9); font-size: 1.2rem; }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Operating Funds */
+        .info-card {
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+        .info-card h3 { color: var(--indigo); margin-bottom: 12px; font-size: 1.1rem; }
+        
+        .note {
+            background: #fef3c7;
+            border-left: 4px solid var(--amber);
+            padding: 16px;
+            margin: 16px 0;
+            border-radius: 0 12px 12px 0;
+            font-size: 0.95rem;
+        }
+
+        .visual-box {
+            padding: 24px 0;
+            background: #f8fafc;
+            border-radius: 24px;
+            margin: 16px 0;
+        }
+
+        .grand-total {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--emerald);
+            background: #f0fdf4;
+            padding: 20px;
+            border-radius: 20px;
+            border: 3px solid #86efac;
+            margin-bottom: 24px;
+        }
+
+        .buckets { display: flex; gap: 12px; margin-bottom: 24px; }
+        .bucket {
+            flex: 1;
+            background: white;
+            border-radius: 20px;
+            padding: 20px 10px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+        }
+        .bucket-title { font-size: 0.8rem; color: var(--text-light); margin-bottom: 8px; font-weight: 700; }
+        .bucket-value { font-size: 1.8rem; font-weight: 900; }
+
+        .pickup-btn {
+            padding: 16px 24px;
+            border: none;
+            border-radius: 16px;
+            background: var(--emerald);
+            color: #fff;
+            font-weight: 700;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .reset-btn {
+            padding: 16px 24px;
+            border: 2px solid #f43f5e;
+            border-radius: 16px;
+            background: #fff;
+            color: #f43f5e;
+            font-weight: 700;
+            width: 100%;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 32px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        @media(min-width:520px){
+            .card-grid{grid-template-columns:1fr 1fr}
+            header h1{font-size:2rem}
+        }
+    </style>
+</head>
+<body>
+<canvas id="confettiCanvas"></canvas>
+
+<div class="app-container">
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="screen active">
+        <header class="dash">
+            <button class="home-btn" disabled>🏠</button>
+            <h1>📋 Shift Runner</h1>
+            <p>Select a procedure to begin</p>
+        </header>
+        <main>
+            <div class="card-grid">
+                <div class="card c-indigo" onclick="startProcedure('assignTill')">
+                    <span class="card-icon">🗄️</span>
+                    <h2>Assign a Till</h2>
+                    <p>14 steps</p>
+                </div>
+                <div class="card c-emerald" onclick="startProcedure('cashPickup')">
+                    <span class="card-icon">💵</span>
+                    <h2>Cash Pickup</h2>
+                    <p>9 steps</p>
+                </div>
+                <div class="card c-amber" onclick="startProcedure('safeAudit')">
+                    <span class="card-icon">🔒</span>
+                    <h2>Safe Audit</h2>
+                    <p>8 steps</p>
+                </div>
+                <div class="card c-purple" onclick="showOperatingFunds()">
+                    <span class="card-icon">💡</span>
+                    <h2>Operating Funds</h2>
+                    <p>Learn & explore</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- PROCEDURE VIEW -->
+    <div id="procedureView" class="screen">
+        <header id="procHeader" class="proc-indigo">
+            <button class="home-btn" onclick="confirmHome()">🏠</button>
+            <h1 id="procTitle">Procedure</h1>
+        </header>
+        <div class="progress-wrap">
+            <div class="progress-bar"><div class="progress-fill fill-indigo" id="progressFill"></div></div>
+        </div>
+        <div class="step-counter" id="stepCounter">Step 1 of 14</div>
+        <main>
+            <div class="step-card">
+                <span class="step-num" id="stepNum">Step 1</span>
+                <div class="step-text" id="stepText">Instruction...</div>
+            </div>
+        </main>
+        <footer>
+            <button class="btn btn-back" onclick="prevStep()">Back</button>
+            <button class="btn btn-next btn-next-indigo" id="nextBtn" onclick="nextStep()">Next Step ▶</button>
+        </footer>
+    </div>
+
+    <!-- SUCCESS SCREEN -->
+    <div id="successScreen" class="screen">
+        <div class="big-emoji">🎉</div>
+        <h2>Congratulations!</h2>
+        <p>You completed the procedure.</p>
+    </div>
+
+    <!-- OPERATING FUNDS -->
+    <div id="operatingFunds" class="screen">
+        <header class="proc-purple">
+            <button class="home-btn" onclick="confirmHome()">🏠</button>
+            <h1>💡 Store Operating Funds</h1>
+            <p>Understand the money pool</p>
+        </header>
+        <main>
+            <div class="info-card">
+                <h3>What Is Store Operating Funds?</h3>
+                <p>Think of it as <strong>one big pool of money</strong> (e.g., $3,000) split into two buckets:</p>
+                <ul style="padding-left:20px; margin: 15px 0;">
+                    <li><strong>Change Fund</strong> — Money kept in the safe.</li>
+                    <li><strong>Tills</strong> — Money sitting in registers.</li>
+                </ul>
+                <div class="note">Money moves between these buckets, but the <strong>total pool never changes</strong>. By end of day, you must make it "whole."</div>
+            </div>
+
+            <div class="info-card">
+                <h3>Interactive Example</h3>
+                <p>Watch how a pickup moves $50 from a till into the change fund.</p>
+                <div class="visual-box">
+                    <div class="grand-total" id="grandTotal">$3,000</div>
+                    <div class="buckets">
+                        <div class="bucket" style="border-color:var(--emerald)">
+                            <div class="bucket-title">Change Fund</div>
+                            <div class="bucket-value" id="changeFund">$2,600</div>
+                        </div>
+                        <div class="bucket" style="border-color:var(--indigo)">
+                            <div class="bucket-title">Tills</div>
+                            <div class="bucket-value" id="tillFund">$400</div>
+                        </div>
+                    </div>
+                    <button class="pickup-btn" onclick="doPickup()">💵 Do Pickup ($50)</button>
+                    <button class="reset-btn" onclick="resetFunds()">↻ Reset Example</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <p>Are you sure? Your progress will be lost.</p>
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
+                <button class="btn btn-back" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-next btn-next-indigo" onclick="goHome()">Yes, Go Home</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const procedures = {
+  assignTill: {
+    title: "🗄️ Assign a Till",
+    color: "indigo",
+    steps: [
+      "Sign into XStore.",
+      "Click the main menu (hamburger, bottom right corner).",
+      "Go to search and start typing \"issue.\"",
+      "When \"Issue / Return Till\" appears, tap on it.",
+      "Find the till you want to assign (Till Number 1 or 2).",
+      "Tap the 3 dots next to the till.",
+      "Tap \"Issue Till.\"",
+      "Type in the employee ID — two zeroes, then their ID number.",
+      "Confirm the amount in the till (standard is $100, but verify what's declared).",
+      "Manager/assigner signs OUT.",
+      "Clerk signs IN and starts to search \"Count Till.\"",
+      "Before they begin counting, enter your username and password to verify you are watching.",
+      "Clerk counts the till, confirms it matches (e.g., $100). Enter your username and password again.",
+      "Clerk takes the till to the front of the store and places it in the register."
+    ]
+  },
+  cashPickup: {
+    title: "💵 Cash Pickup",
+    color: "emerald",
+    steps: [
+      "At the front register, hit Cancel Transaction first.",
+      "Tap the main menu (hamburger, bottom right corner).",
+      "In search, start typing \"cash.\"",
+      "When \"Cash Out\" appears, tap on it.",
+      "The clerk removes and counts the money.",
+      "You (manager) verify the cash amount.",
+      "The clerk shuts the drawer — a slip will print out.",
+      "You and the clerk both sign the slip. The clerk attaches it to their paperwork.",
+      "Put the cash into the safe, or make your change fund whole again."
+    ]
+  },
+  safeAudit: {
+    title: "🔒 Safe Audit",
+    color: "amber",
+    steps: [
+      "Sign into XStore.",
+      "Tap the hamburger main menu (bottom right corner).",
+      "In search, start typing \"safe.\"",
+      "When \"Store Safe Audit\" appears, tap on it.",
+      "Review the amounts shown on screen.",
+      "Verify the money counted matches the expected total: Change Fund + Deposits in Safe + Unassigned Tills.",
+      "If everything matches, you're done!",
+      "If it does not match, investigate the discrepancy before proceeding."
+    ]
+  }
+};
+
+let currentProc = null;
+let stepIdx = 0;
+let changeFund = 2600;
+let tillFund = 400;
+const GRAND = 3000;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function startProcedure(key) {
+  currentProc = key;
+  stepIdx = 0;
+  const proc = procedures[key];
+  const hdr = document.getElementById('procHeader');
+  hdr.className = 'proc-' + proc.color;
+  const nxt = document.getElementById('nextBtn');
+  nxt.className = 'btn btn-next btn-next-' + proc.color;
+  document.getElementById('progressFill').className = 'progress-fill fill-' + proc.color;
+  updateStep();
+  showScreen('procedureView');
+}
+
+function updateStep() {
+  const proc = procedures[currentProc];
+  const total = proc.steps.length;
+  const step = proc.steps[stepIdx];
+  document.getElementById('procTitle').textContent = proc.title;
+  document.getElementById('stepNum').textContent = 'Step ' + (stepIdx + 1);
+  document.getElementById('stepText').textContent = step;
+  document.getElementById('stepCounter').textContent = 'Step ' + (stepIdx + 1) + ' of ' + total;
+  const pct = ((stepIdx + 1) / total) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  const btn = document.getElementById('nextBtn');
+  btn.textContent = stepIdx === total - 1 ? 'Finish ✨' : 'Next Step ▶';
+}
+
+function nextStep() {
+  smallConfetti();
+  stepIdx++;
+  const total = procedures[currentProc].steps.length;
+  if (stepIdx >= total) {
+    bigConfetti();
+    showScreen('successScreen');
+    setTimeout(() => { showScreen('dashboard'); }, 3500);
+  } else {
+    updateStep();
+  }
+}
+
+function prevStep() {
+  if (stepIdx > 0) { stepIdx--; updateStep(); }
+}
+
+function confirmHome() {
+  document.getElementById('modal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+}
+
+function goHome() {
+  closeModal();
+  showScreen('dashboard');
+  currentProc = null;
+}
+
+function showOperatingFunds() {
+  updateFundsDisplay();
+  showScreen('operatingFunds');
+}
+
+function doPickup() {
+  if (tillFund >= 50) {
+    tillFund -= 50;
+    changeFund += 50;
+    updateFundsDisplay();
+    smallConfetti();
+  }
+}
+
+function resetFunds() {
+  changeFund = 2600;
+  tillFund = 400;
+  updateFundsDisplay();
+}
+
+function updateFundsDisplay() {
+  document.getElementById('changeFund').textContent = '$' + changeFund.toLocaleString();
+  document.getElementById('tillFund').textContent = '$' + tillFund.toLocaleString();
+  document.getElementById('grandTotal').textContent = '$' + GRAND.toLocaleString();
+}
+
+// === CONFETTI SYSTEM ===
+var canvas = document.getElementById('confettiCanvas');
+var ctx = canvas.getContext('2d');
+var particles = [];
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function smallConfetti() {
+  var sx = window.innerWidth / 2;
+  var sy = window.innerHeight - 150;
+  var colors = ['#6366f1','#10b981','#f59e0b','#a855f7'];
+  for (var i = 0; i < 20; i++) {
+    particles.push({
+      x: sx, y: sy,
+      size: Math.random() * 6 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vx: (Math.random() - 0.5) * 10,
+      vy: -(Math.random() * 8 + 7),
+      rot: Math.random() * 360,
+      rotSpeed: (Math.random() - 0.5) * 12,
+      grav: 0.3,
+      alpha: 1
+    });
+  }
+}
+
+function bigConfetti() {
+  var colors = ['#6366f1','#10b981','#f59e0b','#a855f7','#f43f5e'];
+  for (var i = 0; i < 100; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: -30,
+      size: Math.random() * 10 + 6,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vx: (Math.random() - 0.5) * 8,
+      vy: Math.random() * 5 + 2,
+      rot: Math.random() * 360,
+      rotSpeed: (Math.random() - 0.5) * 10,
+      grav: 0.2,
+      alpha: 1
+    });
+  }
+}
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (var i = particles.length - 1; i >= 0; i--) {
+    var p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += p.grav;
+    p.rot += p.rotSpeed;
+    p.alpha -= 0.007;
+    if (p.alpha <= 0 || p.y > canvas.height) {
+      particles.splice(i, 1);
+      continue;
+    }
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot * Math.PI / 180);
+    ctx.globalAlpha = p.alpha;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+    ctx.restore();
+  }
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
